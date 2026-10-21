@@ -218,7 +218,7 @@ function appUrlFor(req) {
   return `${host?.includes('localhost') ? 'http' : 'https'}://${host}`
 }
 
-function startOauth(provider, req) {
+function startOauth(provider, req, purpose = 'login') {
   const cfg = OAUTH[provider]
   if (!cfg) return { error: 'Unknown provider.' }
   if (!cfg.clientId || !cfg.clientSecret) {
@@ -228,7 +228,7 @@ function startOauth(provider, req) {
   const verifier = b64url(crypto.randomBytes(32))
   const challenge = b64url(sha256(verifier))
   const redirectUri = redirectUriFor(req)
-  const statePayload = JSON.stringify({ p: provider, v: verifier, r: redirectUri })
+  const statePayload = JSON.stringify({ p: provider, v: verifier, r: redirectUri, u: purpose })
   const state = `${b64url(statePayload)}.${sign(statePayload)}`
 
   const params = new URLSearchParams({
@@ -261,7 +261,7 @@ function verifyState(state) {
   }
 }
 
-async function finishOauth(provider, code, stateData, req) {
+async function finishOauth(provider, code, stateData, req, purpose = 'login') {
   const cfg = OAUTH[provider]
   if (!cfg) throw new Error('Unknown provider.')
   if (!stateData) throw new Error('Invalid OAuth state.')
@@ -291,6 +291,20 @@ async function finishOauth(provider, code, stateData, req) {
 
   const db = await dbRead()
   db.users = db.users || {}
+
+  /* Account recovery: the provider proved the person controls this email.
+     Issue a short-lived grant that only allows setting a new password. */
+  if (purpose === 'reset') {
+    const record = db.users[email]
+    if (!record) {
+      throw new Error('There is no Helios account for that email yet — sign up instead.')
+    }
+    const grant = crypto.randomBytes(32).toString('base64url')
+    record.grant = { h: sha256Hex(grant), exp: Date.now() + RESET_MINUTES * 60000 }
+    await dbWrite(db)
+    return { email, name: record.name, grant }
+  }
+
   const existing = db.users[email]
   if (existing) {
     existing.linked = existing.linked || []
@@ -367,6 +381,41 @@ async function handle(body, req) {
       providers: configuredProviders(),
       mailer: Boolean(process.env.RESEND_API_KEY),
     }
+  }
+
+  if (action === 'grant-verify') {
+    const token = String(body.token || '')
+    const db = await dbRead()
+    const email = Object.keys(db.users || {}).find(
+      (key) =>
+        db.users[key].grant &&
+        db.users[key].grant.h === sha256Hex(token) &&
+        db.users[key].grant.exp > Date.now()
+    )
+    if (!email) return { ok: false, error: 'That reset link is invalid or has expired.' }
+    return { ok: true, email }
+  }
+
+  if (action === 'grant-complete') {
+    const token = String(body.token || '')
+    const password = String(body.password || '')
+    if (password.length < 8) return { ok: false, error: 'Use at least 8 characters.' }
+
+    const db = await dbRead()
+    const email = Object.keys(db.users || {}).find(
+      (key) =>
+        db.users[key].grant &&
+        db.users[key].grant.h === sha256Hex(token) &&
+        db.users[key].grant.exp > Date.now()
+    )
+    if (!email) return { ok: false, error: 'That reset link is invalid or has expired.' }
+
+    const record = await makeRecord(password)
+    delete db.users[email].grant
+    db.users[email].salt = record.salt
+    db.users[email].hash = record.hash
+    await dbWrite(db)
+    return { ok: true, email }
   }
 
   if (action === 'reset-request') {
@@ -496,7 +545,8 @@ export default async function handler(req, res) {
   /* --- OAuth start (GET /api/auth?action=oauth-start&provider=google) --- */
   if (req.method === 'GET' && url.searchParams.get('action') === 'oauth-start') {
     const provider = String(url.searchParams.get('provider') || '')
-    const result = startOauth(provider, req)
+    const purpose = url.searchParams.get('purpose') === 'reset' ? 'reset' : 'login'
+    const result = startOauth(provider, req, purpose)
     if (result.error) {
       res.writeHead(400, { 'Content-Type': 'application/json' })
       return res.end(JSON.stringify({ ok: false, error: result.error }))
@@ -512,9 +562,19 @@ export default async function handler(req, res) {
     const stateData = verifyState(state)
     // The provider comes from the signed state, not the query string.
     const provider = stateData?.p || String(url.searchParams.get('provider') || '')
+    const purpose = stateData?.u === 'reset' ? 'reset' : 'login'
     const app = appUrlFor(req)
     try {
-      const result = await finishOauth(provider, code, stateData, req)
+      const result = await finishOauth(provider, code, stateData, req, purpose)
+
+      if (purpose === 'reset') {
+        res.writeHead(302, {
+          Location: `${app}/?resetgrant=${encodeURIComponent(result.grant)}`,
+          'Cache-Control': 'no-store',
+        })
+        return res.end()
+      }
+
       const query = new URLSearchParams({
         bootstrap: result.token,
         email: result.email,

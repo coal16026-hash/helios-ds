@@ -52,6 +52,11 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--tx);outline-offset:
 .reset-warn{display:block;margin-bottom:8px;color:var(--mu)}
 .reset-link{display:inline-block;padding:9px 18px;border-radius:999px;background:var(--btn);color:var(--btnt);font-size:14px;font-weight:500;text-decoration:none}
 .reset-link:hover{opacity:.88}
+.resetoauth{display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:6px}
+.resetoauth[hidden]{display:none!important}
+.reset-hint{font-size:12px;color:var(--mu);text-align:center}
+.reset-oauth{width:100%;height:44px;border-radius:999px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:500 14px Inter,sans-serif;cursor:pointer;transition:background-color .1s}
+.reset-oauth:hover{background:var(--hov)}
 footer{padding:16px 24px 24px;text-align:center;font-size:13px;color:var(--mu)}
 footer a{color:var(--mu);text-decoration:underline;text-underline-offset:3px}footer a:hover{color:var(--tx)}
 [hidden]{display:none!important}
@@ -70,6 +75,7 @@ footer a{color:var(--mu);text-decoration:underline;text-underline-offset:3px}foo
  <div class="f pw" id="fPw" hidden><input id="pw" type="password" name="password" placeholder=" " autocomplete="current-password"><label for="pw">Password</label>
   <button type="button" class="eye" id="eye" aria-label="Show password"></button></div>
  <div class="msg" id="msg" role="alert" aria-live="polite"></div>
+ <div class="resetoauth" id="resetoauth" hidden></div>
  <button class="primary" id="go" type="submit">Continue</button>
 </form>
 
@@ -92,7 +98,7 @@ const eyeOn='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke=
 const eyeOff='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.600 6.100A10 10 0 0 1 12 5c6.500 0 10 7 10 7a17 17 0 0 1-3.200 4.100M6.600 6.600A17 17 0 0 0 2 12s3.500 7 10 7c1.800 0 3.400-.5 4.800-1.200M9.900 9.900a3 3 0 0 0 4.200 4.200"/></svg>';
 $('#eye').innerHTML=eyeOn;
 
-let mode='login',step=1,busy=false,resetToken='';
+let mode='login',step=1,busy=false,resetToken='',resetVia='email';
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{if(v===null||v===undefined)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}};
 
 // Match the app's saved theme so both screens look identical.
@@ -123,9 +129,23 @@ function render(){
  $('#switch').innerHTML=login?'Don’t have an account? <button type="button" id="flip">Sign up</button>':'Already have an account? <button type="button" id="flip">Log in</button>';
  $('#flip').onclick=()=>{mode=login?'signup':'login';step=1;bad();render();$('#email').focus()};
  document.querySelectorAll('.soc span').forEach((s,i)=>s.textContent='Continue with '+['GitHub','Discord'][i]);
+ renderResetOauth();
  if(!reset)$('#note').textContent='';
  if(step===2)(reset?$('#pw'):(login?$('#pw'):$('#name'))).focus();
 }
+const RESET_PROVIDERS=[['GitHub','github'],['Discord','discord']];
+function renderResetOauth(){
+ const el=$('#resetoauth');
+ if(!el)return;
+ const show=mode==='reset'&&step===1;
+ el.hidden=!show;
+ if(!show){el.innerHTML='';return}
+ const on=RESET_PROVIDERS.filter(([,key])=>configured[key]);
+ if(!on.length){el.innerHTML='<span class="reset-hint">No recovery provider is configured on this server yet.</span>';return}
+ el.innerHTML='<span class="reset-hint">or prove it is you and reset straight away</span>'+
+  on.map(([label,key])=>`<button type="button" class="reset-oauth" data-rp="${key}">${label}</button>`).join('');
+}
+$('#resetoauth').onclick=e=>{const b=e.target.closest('[data-rp]');if(b){b.textContent='Redirecting…';location.href='/api/auth?action=oauth-start&provider='+b.dataset.rp+'&purpose=reset'}};
 $('#forgotWrap').onclick=e=>{if(e.target.closest('#fp')){mode='reset';step=1;bad();render();$('#email').focus()}};
 
 $('#edit').onclick=()=>{step=1;bad();render();$('#email').focus()};
@@ -154,10 +174,12 @@ $('#form').addEventListener('submit',async e=>{
   const pw=$('#pw').value;
   if(pw.length<8)return bad('fPw','Use at least 8 characters.');
   busy=true;$('#go').disabled=true;$('#go').textContent='Updating…';
-  const res=await api('reset-complete',{token:resetToken,password:pw});
+  const res=resetVia==='oauth'
+   ? await api('grant-complete',{token:resetToken,password:pw})
+   : await api('reset-complete',{token:resetToken,password:pw});
   busy=false;$('#go').disabled=false;
   if(!res.ok){render();return bad('fPw',res.error||'Could not reset your password.')}
-  mode='login';step=1;resetToken='';bad();render();
+  mode='login';step=1;resetToken='';resetVia='email';bad();render();
   $('#note').textContent='Password updated. Sign in with your new password.';
   return;
  }
@@ -204,8 +226,8 @@ paintSocial();
 // Which providers does the server have credentials for?
 api('providers',{}).then(d=>{
  if(d&&d.providers)configured=d.providers;
- paintSocial();
-}).catch(()=>paintSocial());
+ paintSocial();renderResetOauth();
+}).catch(()=>{paintSocial();renderResetOauth()});
 
 // Show an error that came back from a failed OAuth callback.
 (function(){
@@ -214,13 +236,14 @@ api('providers',{}).then(d=>{
 
 // Opened from a password reset link?  Jump straight to "choose a new password".
 (function(){
- const t=new URLSearchParams(location.search).get('reset');
- if(!t)return;
- resetToken=t;mode='reset';step=2;
- api('reset-verify',{token:t}).then(d=>{
+ const p=new URLSearchParams(location.search);
+ const t=p.get('reset'),g=p.get('resetgrant');
+ if(!t&&!g)return;
+ resetToken=t||g;resetVia=g?'oauth':'email';mode='reset';step=2;
+ api(g?'grant-verify':'reset-verify',{token:resetToken}).then(d=>{
   if(d&&d.ok){$('#email').value=d.email;render();$('#pw').focus()}
-  else{mode='login';step=1;resetToken='';render();$('#note').textContent=d&&d.error||'That reset link is invalid or has expired.';}
- }).catch(()=>{mode='login';step=1;resetToken='';render()});
+  else{mode='login';step=1;resetToken='';resetVia='email';render();$('#note').textContent=(d&&d.error)||'That reset link is invalid or has expired.';}
+ }).catch(()=>{mode='login';step=1;resetToken='';resetVia='email';render()});
 })();
 
 render();
