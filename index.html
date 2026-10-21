@@ -64,6 +64,17 @@ header{height:56px;flex-shrink:0;display:flex;align-items:center;justify-content
 @keyframes sunin{from{transform:rotate(-70deg) scale(.7);opacity:0}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){#hero .sp{animation:none}}#hero p{color:var(--mu);margin-top:8px;font-size:14px}
 .mp{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 4px 0 10px;margin:0 0 8px 8px;border-radius:999px;background:var(--act);font-size:13px;font-weight:500}.mp button{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--mu)}.mp button:hover{background:var(--hov)}
+#imgopts{display:none;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 8px 8px}
+#imgopts.on{display:flex}
+.io-label{font-size:12px;color:var(--mu);margin-right:2px}
+.io-chip{height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--bd);font-size:12px;font-weight:500;color:var(--mu);transition:background-color .1s,color .1s,border-color .1s}
+.io-chip:hover{background:var(--hov);color:var(--tx)}
+.io-chip.on{background:var(--act);color:var(--tx);border-color:transparent}
+.genimg-wrap{margin:4px 0 16px}
+.genimg{display:block;max-width:100%;border-radius:16px;border:1px solid var(--bd);background:var(--code)}
+.genimg-cap{margin-top:6px;font-size:12px;color:var(--mu)}
+.genimg-cap a{color:var(--mu);text-decoration:underline;text-underline-offset:2px}
+.genimg-cap a:hover{color:var(--tx)}
 .cmp{position:relative;display:flex;align-items:flex-end;gap:2px;background:var(--raise);border-radius:28px;padding:8px}
 #in{flex:1;min-width:0;background:none;border:0;resize:none;color:inherit;font:inherit;font-size:16px;line-height:24px;padding:6px 4px;height:36px;max-height:200px;outline:0}
 #in::placeholder{color:var(--mu)}
@@ -175,7 +186,7 @@ pre{padding:16px;overflow-x:auto;font:13px/1.65 ui-monospace,SFMono-Regular,Menl
 <main id="main"><header><div class="hl"><button class="ib mb" id="mb" style="width:auto"><span id="ml">Helios</span><span data-i="chev" data-s="16"></span></button></div><div id="hr"></div></header>
 <div id="lib"></div><div class="stage" id="stage"><div id="sc"><div class="col" id="msgs"></div></div>
 <div id="cw"><button id="dn" data-i="down2" data-s="16"></button><div class="col"><div id="hero"><h1 id="h1"></h1><p id="hp"></p></div>
-<div id="mpill"></div><div class="cmp"><button class="ib" data-i="plus"></button><textarea id="in" rows="1" placeholder="Ask anything"></textarea><button class="ib" data-i="mic"></button><button id="sb"></button>
+<div id="mpill"></div><div id="imgopts"></div><div class="cmp"><button class="ib" data-i="plus"></button><textarea id="in" rows="1" placeholder="Ask anything"></textarea><button class="ib" data-i="mic"></button><button id="sb"></button>
 <div class="sug" id="sug"></div></div><div class="dis">Helios can make mistakes. Check important info.</div></div></div></div></main>
 <div id="pop"></div>
 <script>
@@ -194,7 +205,7 @@ const hl=c=>c.replace(/(#.*|\/\/.*|--.*)|("[^"\n]*"|'[^'\n]*')|\b(def|return|con
 const inl=s=>s.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\*([^*]+)\*/g,'<i>$1</i>');
 function md0(t){const out=[];esc(t).split('```').forEach((p,i)=>{if(i%2){let n=p.indexOf('\n');if(n<0)n=p.length;out.push(`<div class="cb"><div class="ch"><span>${p.slice(0,n).trim()}</span><div class="cg"><button class="cp dlc">${I('download',16)}Download</button><button class="cp">${I('copy',16)}Copy code</button></div></div><pre><code>${hl(p.slice(n+1).replace(/\n$/,''))}</code></pre></div>`);return}
 let h='',l0=null;const cl=()=>{if(l0){h+=`</${l0}>`;l0=null}};
-p.split('\n').forEach(l=>{let m;if(m=l.match(/^\d+\. (.*)/)){if(l0!='ol'){cl();h+='<ol>';l0='ol'}h+=`<li>${inl(m[1])}</li>`}else if(m=l.match(/^- (.*)/)){if(l0!='ul'){cl();h+='<ul>';l0='ul'}h+=`<li>${inl(m[1])}</li>`}else{cl();if(m=l.match(/^&gt; (.*)/))h+=`<blockquote>${inl(m[1])}</blockquote>`;else if(m=l.match(/^#+ (.*)/))h+=`<h3>${inl(m[1])}</h3>`;else if(l.trim())h+=`<p>${inl(l)}</p>`}});cl();out.push(h)});return out.join('')}
+p.split('\n').forEach(l=>{let m;if(m=l.match(/^\d+\. (.*)/)){if(l0!='ol'){cl();h+='<ol>';l0='ol'}h+=`<li>${inl(m[1])}</li>`}else if(m=l.match(/^- (.*)/)){if(l0!='ul'){cl();h+='<ul>';l0='ul'}h+=`<li>${inl(m[1])}</li>`}else{cl();if(m=l.match(/^!\[([^\]]*)\]\(([^)\s"]+)\)$/))h+=`<figure class="genimg-wrap"><a href="${m[2]}" target="_blank" rel="noopener"><img class="genimg" src="${m[2]}" alt="${m[1]}" loading="lazy"></a></figure>`;else if(m=l.match(/^&gt; (.*)/))h+=`<blockquote>${inl(m[1])}</blockquote>`;else if(m=l.match(/^#+ (.*)/))h+=`<h3>${inl(m[1])}</h3>`;else if(l.trim())h+=`<p>${inl(l)}</p>`}});cl();out.push(h)});return out.join('')}
 const thinkOf=t=>{let th='';const a=(t||'').replace(/<thought>([\s\S]*?)(?:<\/thought>|$)/g,(_,x)=>{th+=x;return''});return[th.trim(),a.trim()]};
 const noTh=t=>thinkOf(t)[1];
 function renderLive(box,t){
@@ -244,7 +255,7 @@ return`Here’s how I’d think about **${tp}**.\n\nStart by naming what you wan
 const G=['Welcome back, {name}','Welcome back, {name}','What can I help with?','What’s on your mind today?','Ready when you are.','Where should we begin?'],M=[['Instant','Fast answers to everyday questions'],['Thinking','Solves harder problems step by step']];
 const SG=[['image','Create an image','image'],['pen','Help me write','write'],['code','Code something','code'],['cap','Explain a concept','explain'],['chart','Analyze data','data'],['bulb','Brainstorm ideas','brainstorm']];
 const MODES={
-image:{label:'Image Studio',icon:'image',title:'Image Studio',hint:'Describe the image you want. Helios will turn it into a detailed prompt.',ph:'Describe the image you want to create',re:/\b(create|make|generate|draw|design|paint|render|illustrate)\b.*\b(image|picture|photo|illustration|logo|artwork|poster|wallpaper)\b/i,sys:'Image Studio mode: turn the request into one vivid, specific image prompt in a code block, then add one line on the style choices. Ask only for missing essentials.'},
+image:{label:'Image Studio',icon:'image',title:'Image Studio',hint:'Describe the image you want. Helios will generate it.',ph:'Describe the image you want to create',re:/\b(create|make|generate|draw|design|paint|render|illustrate)\b.*\b(image|picture|photo|illustration|logo|artwork|poster|wallpaper)\b/i,sys:'Image Studio mode: the user wants an image. Describe the subject, environment, style, lighting and composition clearly.'},
 explain:{label:'Explain',icon:'cap',title:'Explain a concept',hint:'Ask about any idea. I will start simple and build up.',ph:'What concept should I explain?',re:/^\s*(explain|what is|what are|how does|how do|why does|teach me)\b/i,sys:'Explain mode: start with a plain-language analogy, then give precise detail, then a short recap. Use headings only for long answers.'},
 code:{label:'Code',icon:'code',title:'Code',hint:'Describe what to build or fix. I will answer with working code.',ph:'Describe what to build or fix',re:/\b(code|function|script|bug|error|debug|regex|sql|python|javascript|typescript|react|css|api|refactor|implement)\b/i,sys:'Code mode: give working code in fenced blocks that name the language, then brief notes. Prefer minimal, runnable examples.'},
 write:{label:'Writing',icon:'pen',title:'Help me write',hint:'Tell me the purpose and audience, and I will draft it.',ph:'What should I write?',re:/\b(write|draft|email|essay|letter|rewrite|proofread)\b/i,sys:'Writing mode: produce polished prose the user can use directly. End with one short offer to adjust tone or length.'},
@@ -261,12 +272,25 @@ const ttl=t=>/^(hi|hello|hey|yo|sup)\b/i.test(t)?'Friendly greeting':t.replace(/
 function renderList(){$('#list').innerHTML=chats.map(c=>`<div class="row${c===cur?' on':''}" data-id="${c.id}"><span class="t">${esc(c.title)}</span><button class="ib mm">${I('more',18)}</button></div>`).join('')}
 function renderHead(){const e=cur.msgs.length;$('#hr').innerHTML=e?`<button class="pill">${I('share',16)}Share</button><button class="ib">${I('more')}</button>`:`<button class="tmp${temp?' on':''}" id="tm">${I('ghost',18)}Temporary chat</button><button class="ib">${I('more')}</button>`;$('#ml').textContent=model}
 const isMd=t=>/```|^\s{0,3}#{1,6}\s|^\s*(?:[-*+]|\d+\.)\s|\*\*[^*]+\*\*|^\s*\|.+\|/m.test(t||'');
-function renderMsgs(){$('#msgs').innerHTML=cur.msgs.map((m,i)=>m.r=='u'?`<div class="u" data-i="${i}"><button class="ib sm ed" data-b="edit">${I('pen',18)}</button><div class="ub">${esc(m.t)}</div></div>`:`<div class="a"><div class="md">${md(m.t,m.th)}</div><div class="acts" data-i="${i}">${['copy','share','retry',...(isMd(m.t)?['download']:[]),'more'].map(n=>`<button class="ib sm" data-b="${n}">${I(n,18)}</button>`).join('')}</div></div>`).join('');rm($('#msgs'));
+function renderMsgs(){$('#msgs').innerHTML=cur.msgs.map((m,i)=>m.r=='u'?`<div class="u" data-i="${i}"><button class="ib sm ed" data-b="edit">${I('pen',18)}</button><div class="ub">${esc(m.t)}</div></div>`:`<div class="a"><div class="md">${md(m.t,m.th)}</div>${m.img?`<figure class="genimg-wrap"><a href="${esc(m.img)}" target="_blank" rel="noopener"><img class="genimg" src="${esc(m.img)}" alt="${esc(m.imgPrompt||'Generated image')}" loading="lazy"></a><figcaption class="genimg-cap">${esc(m.imgSize||'')}${m.imgRatio?' · '+esc(m.imgRatio):''} · <a href="${esc(m.img)}" download target="_blank" rel="noopener">Download</a></figcaption></figure>`:''}<div class="acts" data-i="${i}">${['copy','share','retry',...(isMd(m.t)?['download']:[]),'more'].map(n=>`<button class="ib sm" data-b="${n}">${I(n,18)}</button>`).join('')}</div></div>`).join('');rm($('#msgs'));
 // re-attach the live view if this chat is the one still streaming
 if(live&&cur===live.chat){const el=$('#msgs').lastElementChild;if(el){el.classList.add('st');renderLive(el.querySelector('.md'),live.m.t)}}
 sc.scrollTop=sc.scrollHeight}
 function renderAll(){document.body.classList.remove('lv');renderList();renderHead();renderMode();renderMsgs();const e=!cur.msgs.length;$('#main').classList.toggle('empty',e);$('#stage').classList.toggle('x',e);{const nm=(ls('hn')||'Hazmith Newton').trim().split(/\s+/)[0],tx=temp?'Temporary Chat':(cur.mode&&!cur.msgs.length?MODES[cur.mode].title:greet.replace('{name}',nm));$('#h1').innerHTML=(temp?'':`<span class="sp"><svg width="38" height="38" viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor" stroke="currentColor" stroke-width=".7" stroke-linejoin="round"><circle cx="12" cy="12" r="3.5" stroke="none"/><path d="M11.05 6.00L12 0.50L12.95 6.00Z" transform="rotate(0 12 12)"/><path d="M11.05 6.00L12 3.10L12.95 6.00Z" transform="rotate(30 12 12)"/><path d="M11.05 6.00L12 0.50L12.95 6.00Z" transform="rotate(60 12 12)"/><path d="M11.05 6.00L12 3.10L12.95 6.00Z" transform="rotate(90 12 12)"/><path d="M11.05 6.00L12 0.50L12.95 6.00Z" transform="rotate(120 12 12)"/><path d="M11.05 6.00L12 3.10L12.95 6.00Z" transform="rotate(150 12 12)"/><path d="M11.05 6.00L12 0.50L12.95 6.00Z" transform="rotate(180 12 12)"/><path d="M11.05 6.00L12 3.10L12.95 6.00Z" transform="rotate(210 12 12)"/><path d="M11.05 6.00L12 0.50L12.95 6.00Z" transform="rotate(240 12 12)"/><path d="M11.05 6.00L12 3.10L12.95 6.00Z" transform="rotate(270 12 12)"/><path d="M11.05 6.00L12 0.50L12.95 6.00Z" transform="rotate(300 12 12)"/><path d="M11.05 6.00L12 3.10L12.95 6.00Z" transform="rotate(330 12 12)"/></g></svg></span>`)+`<span>${esc(tx)}</span>`}const hint=temp?'This chat won’t appear in history.':(cur.mode&&!cur.msgs.length?MODES[cur.mode].hint:'');$('#hp').textContent=hint;$('#hp').style.display=hint?'':'none';document.title=cur.msgs.length&&!temp?cur.title:'Helios';setBtn();sug()}
-function renderMode(){const m=cur.mode&&MODES[cur.mode];$('#mpill').innerHTML=m?`<span class="mp">${I(m.icon,14)}${m.label}<button data-x aria-label="Exit ${m.label}">${I('x',12)}</button></span>`:'';$('#in').placeholder=m?m.ph:'Ask anything'}
+function renderMode(){const m=cur.mode&&MODES[cur.mode];$('#mpill').innerHTML=m?`<span class="mp">${I(m.icon,14)}${m.label}<button data-x aria-label="Exit ${m.label}">${I('x',12)}</button></span>`:'';$('#in').placeholder=m?m.ph:'Ask anything';renderImgOpts()}
+const IMG_SIZES=['1K','2K','3K','4K'],IMG_RATIOS=['1:1','16:9','4:3','3:4','9:16','21:9'];
+function renderImgOpts(){
+ const el=$('#imgopts');
+ if(!el)return;
+ if(!cur.mode||cur.mode!=='image'){el.innerHTML='';el.classList.remove('on');return}
+ if(!cur.isz){cur.isz=ls('isz')||'1K';cur.ira=ls('ira')||'1:1'}
+ el.classList.add('on');
+ el.innerHTML=`<span class="io-label">Size</span>`+IMG_SIZES.map(s=>`<button type="button" class="io-chip${cur.isz===s?' on':''}" data-sz="${s}">${s}</button>`).join('')+
+ `<span class="io-label">Ratio</span>`+IMG_RATIOS.map(r=>`<button type="button" class="io-chip${cur.ira===r?' on':''}" data-ra="${r}">${r}</button>`).join('');
+}
+$('#imgopts').onclick=e=>{const s=e.target.closest('[data-sz]'),r=e.target.closest('[data-ra]');
+ if(s){cur.isz=s.dataset.sz;ls('isz',cur.isz);save();renderImgOpts()}
+ if(r){cur.ira=r.dataset.ra;ls('ira',cur.ira);save();renderImgOpts()}};
 function setMode(m){cur.mode=m;save();renderAll();inp.focus()}
 $('#mpill').onclick=e=>{if(e.target.closest('[data-x]')){cur.mode=null;save();renderAll();inp.focus()}};
 function newChat(){cur={id:uid(),title:'New chat',msgs:[]};greet=pick(G);renderAll();inp.focus()}
@@ -306,6 +330,7 @@ chat.msgs.push({r:'u',t:text});inp.value='';fit();busy=true;stp=false;stick=true
 const m={r:'a',t:''};chat.msgs.push(m);save();
 ac=new AbortController();live={chat,m,ac};
 renderAll();
+if(chat.mode=='image'){await genImage(chat,text,m);busy=false;live=null;save();if(cur===chat)renderAll();else{renderList();setBtn()}return}
 const w=[];let i=0,out='';
 // the visible message box, only if this chat is still on screen
 const lb=()=>{if(!live||live.chat!==chat||cur!==chat)return null;const e=$('#msgs').lastElementChild;return e&&e.classList.contains('st')?e.querySelector('.md'):null};
@@ -326,7 +351,7 @@ $('#dn').onclick=()=>sc.scrollTo({top:sc.scrollHeight,behavior:'auto'});
 $('#msgs').onclick=e=>{const dc=e.target.closest('.dlc');if(dc){const cb=dc.closest('.cb'),lg=cb.querySelector('.ch span').textContent.trim();dlFile(cb.querySelector('code').innerText,FN(lg,cb.querySelector('code').innerText));return}const cp=e.target.closest('.cp'),b=e.target.closest('[data-b]');
 if(cp){try{navigator.clipboard.writeText(cp.closest('.cb').querySelector('code').innerText)}catch(x){}cp.innerHTML=I('check',16)+'Copied';setTimeout(()=>cp.innerHTML=I('copy',16)+'Copy code',1500)}
 if(!b)return;const k=b.dataset.b;if(k=='cx'){renderMsgs();return}if(k=='ok'){const v=b.closest('.ef').querySelector('textarea').value,j=+b.closest('.u').dataset.i;if(v.trim()&&!busy){cur.msgs.length=j;send(v)}return}const i=+b.closest('[data-i]').dataset.i;if(k=='edit'){if(!busy){b.closest('.u').innerHTML=`<div class="ef"><textarea>${esc(cur.msgs[i].t)}</textarea><div><button class="pill" data-b="cx">Cancel</button><button class="pill snd" data-b="ok">Send</button></div></div>`;const t=$('.ef textarea');t.focus();t.setSelectionRange(t.value.length,t.value.length)}return}
-if(k=='download')dlFile(cur.msgs[i].t,'response.md','text/markdown');
+if(k=='download'){if(cur.msgs[i].img){const a=document.createElement('a');a.href=cur.msgs[i].img;a.download='helios-image.png';a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}else dlFile(cur.msgs[i].t,'response.md','text/markdown')}
 else if(k=='copy'){try{navigator.clipboard.writeText(cur.msgs[i].t)}catch(x){}b.innerHTML=I('check',18);setTimeout(()=>b.innerHTML=I('copy',18),1500)}
 else if(k=='like'||k=='dislike')b.classList.toggle('on');
 else if(k=='retry'&&!busy&&i==cur.msgs.length-1){cur.msgs.pop();send(cur.msgs.pop().t)}};
@@ -562,6 +587,22 @@ const car=model=='Helios Carbon';
 for(const [prov,id] of (ROUTE[model]||ROUTE['Helios Helium'])){const ks=PROV[prov].keys.slice().sort(()=>Math.random()-.5);lanes.push({prov,id,keys:ks});if(car)for(const key of ks)cands.push({prov,id,key,carbon:car})}
 lanes.sort((x,y)=>(TTFA[x.id]??1e9)-(TTFA[y.id]??1e9));
 if(car)await seqChat(cands,msgs,signal,onText);else await raceLanes(lanes,msgs,signal,onText);
+}
+/* Image generation (Agnes Image 2.5 Flash) — the provider lives on the server,
+   the browser only ever sees the finished image URL. */
+async function genImage(chat,text,m){
+ m.t='Generating image…';renderMsgs();
+ const size=chat.isz||'1K',ratio=chat.ira||'1:1';
+ try{
+  const r=await fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({prompt:text,size,ratio}),signal:ac.signal});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.ok||!j.url)throw new Error(j.error||('HTTP '+r.status));
+  m.img=j.url;m.imgSize=size;m.imgRatio=ratio;m.t='';m.imgPrompt=text;
+ }catch(e){
+  if(e.name!=='AbortError'){console.warn('[helios] image failed:',e.message);m.t='Model could not generate a response.'}
+  else{m.stopped=true;m.t='Stopped.'}
+ }
 }
 const go=h=>location.hash==='#'+h?route():location.hash=h;
 function route(){const m=location.hash.match(/^#\/c\/(\w+)/),c=m&&chats.find(x=>x.id==m[1]);if(c){cur=c;temp=false}else{if(m){try{history.replaceState(null,'','#/')}catch(x){}}cur={id:uid(),title:'New chat',msgs:[]};greet=pick(G)}renderAll();if(!m)inp.focus()}

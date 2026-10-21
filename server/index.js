@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { handleAuth } from './auth.js'
+import { handleImage } from './image.js'
 
 const PORT = process.env.PORT || 8787
 
@@ -134,6 +135,10 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === '/api/auth' && (req.method === 'POST' || req.method === 'GET')) {
     return handleAuth(req, res)
+  }
+
+  if (url.pathname === '/api/image' && req.method === 'POST') {
+    return handleImage(req, res)
   }
 
   if ((url.pathname === '/api/chat' || url.pathname === '/chat') && req.method === 'POST') {
