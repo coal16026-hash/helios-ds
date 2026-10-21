@@ -272,7 +272,7 @@ let chats=[],cur,temp=false,busy=false,stp=false,model='Helios Helium',stick=tru
    the previous user's history. */
 const whoAmI=()=>{try{const u=JSON.parse(localStorage.getItem('helios_user')||'{}');return(u&&u.email?String(u.email).toLowerCase():'guest')}catch(e){return'guest'}};
 const chatStore=()=>'hc:'+whoAmI();
-try{if(!localStorage.getItem('v2')){localStorage.setItem('v2','1');localStorage.removeItem('hc')}chats=JSON.parse(localStorage.getItem(chatStore()))||[]}catch(e){}
+try{if(!localStorage.getItem('v2')){localStorage.setItem('v2','1')}localStorage.removeItem('hc');chats=JSON.parse(localStorage.getItem(chatStore()))||[]}catch(e){}
 const save=()=>{try{localStorage.setItem(chatStore(),JSON.stringify(chats))}catch(e){}};
 if(false)['Sorting algorithms: Python vs JavaScript','React useEffect cleanup','Tailwind dark mode toggle','SQL window functions explained','Email to renegotiate a deadline','Fix CORS error in Express','Weekly meal prep ideas','Regex for validating emails','Python pandas groupby tips','Trip plan: Lisbon in October'].forEach(t=>chats.push({id:uid(),title:t,msgs:[{r:'u',t},{r:'a',t:mock(t)}]}));
 const sc=$('#sc'),inp=$('#in'),pop=$('#pop');
