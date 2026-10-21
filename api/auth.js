@@ -319,11 +319,102 @@ function cookieFor(token) {
   return `helios_session=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax`
 }
 
+/* ------------------------------------------------------------- password reset */
+
+const RESET_MINUTES = 60
+const sha256Hex = (value) =>
+  crypto.createHash('sha256').update(String(value)).digest('hex')
+
+/* Send the reset link by email when a mailer is configured, otherwise print it
+   to the server log (handy for self-hosted / Render deployments). */
+async function deliverResetLink(email, link) {
+  const apiKey = process.env.RESEND_API_KEY || ''
+  if (!apiKey) {
+    console.log(`[helios] password reset link for ${email}:\n${link}`)
+    return { sent: false }
+  }
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        from: process.env.RESEND_FROM || 'Helios <onboarding@resend.dev>',
+        to: [email],
+        subject: 'Reset your Helios password',
+        html: `<div style="font:15px/1.6 system-ui;max-width:520px">
+  <h2 style="margin:0 0 12px">Reset your Helios password</h2>
+  <p>This link works once and expires in ${RESET_MINUTES} minutes.</p>
+  <p><a href="${link}" style="display:inline-block;background:#0d0d0d;color:#fff;padding:12px 20px;border-radius:999px;text-decoration:none">Choose a new password</a></p>
+  <p style="color:#6b6b6b;font-size:13px">If you did not ask for this, you can ignore this email.</p>
+</div>`,
+      }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) throw new Error(`mailer returned ${res.status}`)
+    return { sent: true }
+  } catch (err) {
+    console.error(`[helios] reset email failed: ${err.message}\n${link}`)
+    return { sent: false }
+  }
+}
+
 async function handle(body, req) {
   const action = String(body?.action || '')
 
   if (action === 'providers') {
     return { ok: true, providers: configuredProviders() }
+  }
+
+  if (action === 'reset-request') {
+    const email = normalizeEmail(body.email)
+    if (!isEmail(email)) return { ok: false, error: 'Enter a valid email address.' }
+
+    const db = await dbRead()
+    const record = db.users?.[email]
+    if (record) {
+      const token = crypto.randomBytes(32).toString('base64url')
+      record.reset = { h: sha256Hex(token), exp: Date.now() + RESET_MINUTES * 60000 }
+      await dbWrite(db)
+      const app = appUrlFor(req)
+      await deliverResetLink(email, `${app}/?reset=${encodeURIComponent(token)}`)
+    }
+    // Always the same answer — never reveal whether an account exists.
+    return { ok: true }
+  }
+
+  if (action === 'reset-verify') {
+    const token = String(body.token || '')
+    const db = await dbRead()
+    const email = Object.keys(db.users || {}).find(
+      (key) =>
+        db.users[key].reset &&
+        db.users[key].reset.h === sha256Hex(token) &&
+        db.users[key].reset.exp > Date.now()
+    )
+    if (!email) return { ok: false, error: 'That reset link is invalid or has expired.' }
+    return { ok: true, email }
+  }
+
+  if (action === 'reset-complete') {
+    const token = String(body.token || '')
+    const password = String(body.password || '')
+    if (password.length < 8) return { ok: false, error: 'Use at least 8 characters.' }
+
+    const db = await dbRead()
+    const email = Object.keys(db.users || {}).find(
+      (key) =>
+        db.users[key].reset &&
+        db.users[key].reset.h === sha256Hex(token) &&
+        db.users[key].reset.exp > Date.now()
+    )
+    if (!email) return { ok: false, error: 'That reset link is invalid or has expired.' }
+
+    const record = await makeRecord(password)
+    delete db.users[email].reset
+    db.users[email].salt = record.salt
+    db.users[email].hash = record.hash
+    await dbWrite(db)
+    return { ok: true, email }
   }
 
   if (action === 'signup') {
