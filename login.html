@@ -160,7 +160,8 @@ function paintSocial(){
   b.title=on?('Continue with '+b.dataset.p):(b.dataset.p+' sign-in needs a client ID on the server');
   b.onclick=()=>{
    if(on){label.textContent='Redirecting…';location.href='/api/auth?action=oauth-start&provider='+key;return}
-   $('#note').textContent=b.dataset.p+' sign-in isn’t connected yet — add '+(key==='google'?'GOOGLE':key==='github'?'GITHUB':'DISCORD')+'_CLIENT_ID and _CLIENT_SECRET to the server.';
+   const P=key==='google'?'GOOGLE':key==='github'?'GITHUB':'DISCORD';
+   $('#note').textContent=b.dataset.p+' sign-in isn’t connected yet — add '+P+'_CLIENT_ID and '+P+'_CLIENT_SECRET to the server.';
   };
  });
 }
