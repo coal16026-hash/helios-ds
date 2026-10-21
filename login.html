@@ -155,14 +155,16 @@ function paintSocial(){
  document.querySelectorAll('.soc button').forEach(b=>{
   const key=PROVIDER_KEYS[b.dataset.p];
   const on=configured[key];
+  const label=b.querySelector('span');
   b.style.opacity=on?'1':'.55';
   b.title=on?('Continue with '+b.dataset.p):(b.dataset.p+' sign-in needs a client ID on the server');
   b.onclick=()=>{
-   if(on){b.textContent='Redirecting…';location.href='/api/auth?action=oauth-start&provider='+key;return}
+   if(on){label.textContent='Redirecting…';location.href='/api/auth?action=oauth-start&provider='+key;return}
    $('#note').textContent=b.dataset.p+' sign-in isn’t connected yet — add '+(key==='google'?'GOOGLE':key==='github'?'GITHUB':'DISCORD')+'_CLIENT_ID and _CLIENT_SECRET to the server.';
   };
  });
 }
+paintSocial();
 
 // Which providers does the server have credentials for?
 api('providers',{}).then(d=>{
