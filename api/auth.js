@@ -362,7 +362,11 @@ async function handle(body, req) {
   const action = String(body?.action || '')
 
   if (action === 'providers') {
-    return { ok: true, providers: configuredProviders() }
+    return {
+      ok: true,
+      providers: configuredProviders(),
+      mailer: Boolean(process.env.RESEND_API_KEY),
+    }
   }
 
   if (action === 'reset-request') {
@@ -371,15 +375,27 @@ async function handle(body, req) {
 
     const db = await dbRead()
     const record = db.users?.[email]
+    let link = null
+    let sent = false
+
     if (record) {
       const token = crypto.randomBytes(32).toString('base64url')
       record.reset = { h: sha256Hex(token), exp: Date.now() + RESET_MINUTES * 60000 }
       await dbWrite(db)
       const app = appUrlFor(req)
-      await deliverResetLink(email, `${app}/?reset=${encodeURIComponent(token)}`)
+      link = `${app}/?reset=${encodeURIComponent(token)}`
+      const delivery = await deliverResetLink(email, link)
+      sent = delivery.sent
     }
-    // Always the same answer — never reveal whether an account exists.
-    return { ok: true }
+
+    const result = { ok: true, delivered: sent }
+    // No mailer configured: hand the link back so the reset can actually be
+    // completed. (With a mailer the link only ever goes to the inbox.)
+    // Set RESET_REQUIRE_MAILER=1 to disable this fallback entirely.
+    if (link && !sent && process.env.RESET_REQUIRE_MAILER !== '1') {
+      result.link = link
+    }
+    return result
   }
 
   if (action === 'reset-verify') {

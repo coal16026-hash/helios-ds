@@ -49,6 +49,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--tx);outline-offset:
 .soc svg{width:20px;height:20px}
 .soc span{flex:1;text-align:center;margin-right:20px}
 .note{color:var(--mu);font-size:13px;text-align:center;margin-top:14px;min-height:20px}
+.reset-warn{display:block;margin-bottom:8px;color:var(--mu)}
+.reset-link{display:inline-block;padding:9px 18px;border-radius:999px;background:var(--btn);color:var(--btnt);font-size:14px;font-weight:500;text-decoration:none}
+.reset-link:hover{opacity:.88}
 footer{padding:16px 24px 24px;text-align:center;font-size:13px;color:var(--mu)}
 footer a{color:var(--mu);text-decoration:underline;text-underline-offset:3px}footer a:hover{color:var(--tx)}
 [hidden]{display:none!important}
@@ -141,7 +144,11 @@ $('#form').addEventListener('submit',async e=>{
    busy=true;$('#go').disabled=true;$('#go').textContent='Sending…';
    const res=await api('reset-request',{email});
    busy=false;$('#go').disabled=false;render();
-   $('#note').textContent='If an account exists for that email, a reset link is on its way.';
+   if(res.link){
+    $('#note').innerHTML='<span class="reset-warn">Email delivery is not configured on this server, so your reset link is here:</span><a class="reset-link" href="'+res.link+'">Open the reset link</a>';
+   }else{
+    $('#note').textContent=res.delivered?'Reset link sent — check your inbox.':'If an account exists for that email, a reset link is on its way.';
+   }
    return;
   }
   const pw=$('#pw').value;
