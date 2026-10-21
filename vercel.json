@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "login.html", "use": "@vercel/static" },
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "api/chat.js", "use": "@vercel/node" },
+    { "src": "api/auth.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/chat", "dest": "/api/chat.js" },
+    { "src": "/api/auth", "dest": "/api/auth.js" },
+    { "src": "/app", "dest": "/index.html" },
+    { "src": "/app/(.*)", "dest": "/index.html" },
+    { "src": "/", "dest": "/login.html" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
