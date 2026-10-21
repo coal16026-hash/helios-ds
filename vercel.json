@@ -3,6 +3,7 @@
   "builds": [
     { "src": "login.html", "use": "@vercel/static" },
     { "src": "index.html", "use": "@vercel/static" },
+    { "src": "favicon.svg", "use": "@vercel/static" },
     { "src": "api/chat.js", "use": "@vercel/node" },
     { "src": "api/auth.js", "use": "@vercel/node" },
     { "src": "api/image.js", "use": "@vercel/node" }

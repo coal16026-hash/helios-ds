@@ -242,20 +242,28 @@ function startOauth(provider, req) {
   return { url: `${cfg.authorize}?${params.toString()}` }
 }
 
-async function finishOauth(provider, code, state, req) {
+/* Verify the signed state and return its payload (provider, PKCE verifier,
+   redirect uri). The provider is read from here — GitHub/Discord/Google do
+   NOT send the provider back on the callback. */
+function verifyState(state) {
+  const [payload, signature] = String(state || '').split('.')
+  if (!payload || !signature) return null
+  const a = Buffer.from(signature)
+  const b = Buffer.from(sign(fromB64url(payload)))
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null
+  try {
+    return JSON.parse(fromB64url(payload))
+  } catch {
+    return null
+  }
+}
+
+async function finishOauth(provider, code, stateData, req) {
   const cfg = OAUTH[provider]
   if (!cfg) throw new Error('Unknown provider.')
+  if (!stateData) throw new Error('Invalid OAuth state.')
 
-  const [payload, signature] = String(state || '').split('.')
-  if (!payload || !signature) throw new Error('Invalid OAuth state.')
-  const expected = sign(fromB64url(payload))
-  const a = Buffer.from(signature)
-  const b = Buffer.from(expected)
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    throw new Error('Invalid OAuth state.')
-  }
-  const stateData = JSON.parse(fromB64url(payload))
-  if (stateData.p !== provider) throw new Error('OAuth state mismatch.')
+  const redirectUri = stateData.r || redirectUriFor(req)
 
   const tokenRes = await fetch(cfg.token, {
     method: 'POST',
@@ -263,7 +271,7 @@ async function finishOauth(provider, code, state, req) {
     body: new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: stateData.r || redirectUriFor(req),
+      redirect_uri: redirectUri,
       client_id: cfg.clientId,
       client_secret: cfg.clientSecret,
       code_verifier: stateData.v,
@@ -389,12 +397,14 @@ export default async function handler(req, res) {
 
   /* --- OAuth callback (GET /api/auth?code=...&state=...) --- */
   if (req.method === 'GET' && url.searchParams.get('code')) {
-    const provider = String(url.searchParams.get('provider') || '')
     const code = String(url.searchParams.get('code') || '')
     const state = String(url.searchParams.get('state') || '')
+    const stateData = verifyState(state)
+    // The provider comes from the signed state, not the query string.
+    const provider = stateData?.p || String(url.searchParams.get('provider') || '')
     const app = appUrlFor(req)
     try {
-      const result = await finishOauth(provider, code, state, req)
+      const result = await finishOauth(provider, code, stateData, req)
       res.writeHead(302, {
         Location: `${app}/app?bootstrap=${encodeURIComponent(result.token)}`,
         'Set-Cookie': cookieFor(result.token),
