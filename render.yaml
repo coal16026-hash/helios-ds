@@ -3,9 +3,8 @@ services:
     name: helios-api
     runtime: node
     plan: free
-    rootDir: server
-    buildCommand: "echo 'zero-dep node proxy; no build'"
-    startCommand: "node --env-file-if-exists=.env index.js"
+    buildCommand: "echo 'no build step'"
+    startCommand: "node server/index.js"
     healthCheckPath: /health
     envVars:
       - key: GOOGLE_KEYS
@@ -16,3 +15,11 @@ services:
         sync: false
       - key: AGNES_KEYS
         sync: false
+      - key: DB_TOKEN
+        sync: false
+      - key: DB_REPO
+        sync: false
+      - key: DB_PATH
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true

@@ -1,4 +1,8 @@
 import http from 'node:http'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { handleAuth } from './auth.js'
 
 const PORT = process.env.PORT || 8787
 
@@ -124,7 +128,11 @@ const server = http.createServer(async (req, res) => {
     return res.end()
   }
 
-  if (url.pathname === '/chat' && req.method === 'POST') {
+  if (url.pathname === '/api/auth' && req.method === 'POST') {
+    return handleAuth(req, res)
+  }
+
+  if ((url.pathname === '/api/chat' || url.pathname === '/chat') && req.method === 'POST') {
     try {
       await chat(req, res)
     } catch (err) {
@@ -136,6 +144,16 @@ const server = http.createServer(async (req, res) => {
     return
   }
 
+  /* Serve the frontend from the repo root so a standalone deploy is complete. */
+  const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+  const page = url.pathname === '/' ? 'login.html' : 'index.html'
+  if (url.pathname === '/' || url.pathname === '/app' || url.pathname === '/app/' || url.pathname === '/login.html') {
+    const file = path.join(ROOT, page)
+    if (fs.existsSync(file)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+      return fs.createReadStream(file).pipe(res)
+    }
+  }
   if (url.pathname === '/health') {
     res.writeHead(200, { ...CORS, 'Content-Type': 'application/json' })
     return res.end(
