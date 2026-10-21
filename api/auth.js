@@ -499,8 +499,13 @@ export default async function handler(req, res) {
     const app = appUrlFor(req)
     try {
       const result = await finishOauth(provider, code, stateData, req)
+      const query = new URLSearchParams({
+        bootstrap: result.token,
+        email: result.email,
+        name: result.name || '',
+      })
       res.writeHead(302, {
-        Location: `${app}/app?bootstrap=${encodeURIComponent(result.token)}`,
+        Location: `${app}/app?${query.toString()}`,
         'Set-Cookie': cookieFor(result.token),
         'Cache-Control': 'no-store',
       })
