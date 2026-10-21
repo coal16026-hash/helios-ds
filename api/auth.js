@@ -22,8 +22,10 @@ const OAUTH = {
     label: 'GitHub',
     clientId: process.env.GITHUB_CLIENT_ID || '',
     clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
-    authorize: 'https://github.com/login/oauth/authorize',
-    token: 'https://github.com/login/oauth/access_token',
+    authorize: process.env.GITHUB_AUTHORIZE_URL || 'https://github.com/login/oauth/authorize',
+    token: process.env.GITHUB_TOKEN_URL || 'https://github.com/login/oauth/access_token',
+    user: process.env.GITHUB_USER_URL || 'https://api.github.com/user',
+    emails: process.env.GITHUB_EMAILS_URL || 'https://api.github.com/user/emails',
     scope: 'read:user user:email',
     extra: {},
     async profile(accessToken) {
@@ -32,10 +34,10 @@ const OAUTH = {
         Accept: 'application/vnd.github+json',
         'User-Agent': 'helios',
       }
-      const user = await fetch('https://api.github.com/user', { headers }).then((r) => r.json())
+      const user = await fetch(this.user, { headers }).then((r) => r.json())
       let email = user.email
       if (!email) {
-        const list = await fetch('https://api.github.com/user/emails', { headers }).then((r) => r.json())
+        const list = await fetch(this.emails, { headers }).then((r) => r.json())
         const primary = (list || []).find((e) => e.primary && e.verified) || (list || [])[0]
         email = primary?.email
       }
@@ -47,12 +49,13 @@ const OAUTH = {
     label: 'Discord',
     clientId: process.env.DISCORD_CLIENT_ID || '',
     clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
-    authorize: 'https://discord.com/oauth2/authorize',
-    token: 'https://discord.com/api/oauth2/token',
+    authorize: process.env.DISCORD_AUTHORIZE_URL || 'https://discord.com/oauth2/authorize',
+    token: process.env.DISCORD_TOKEN_URL || 'https://discord.com/api/oauth2/token',
+    user: process.env.DISCORD_USER_URL || 'https://discord.com/api/users/@me',
     scope: 'identify email',
     extra: { prompt: 'consent' },
     async profile(accessToken) {
-      const res = await fetch('https://discord.com/api/users/@me', {
+      const res = await fetch(this.user, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
       const j = await res.json()
