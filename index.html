@@ -305,7 +305,7 @@ const w=[];let i=0,out='';
 const lb=()=>{if(!live||live.chat!==chat||cur!==chat)return null;const e=$('#msgs').lastElementChild;return e&&e.classList.contains('st')?e.querySelector('.md'):null};
 const up=()=>{m.t=out;if(up.q)return;up.q=1;requestAnimationFrame(()=>{up.q=0;const b=lb();if(b&&busy){renderLive(b,m.t);if(stick)sc.scrollTop=sc.scrollHeight}})};
 try{await getReply(chat.msgs.slice(0,-1),text,ac.signal,t=>{out=t;up()},chat.mode)}
-catch(e){if(e.name!='AbortError'){const o=(out.match(/<thought>/g)||[]).length>(out.match(/<\/thought>/g)||[]).length?'</thought>':'';out+=o+(thinkOf(out)[1]?'\n\n':'')+'Request failed: '+e.message}}
+catch(e){if(e.name!='AbortError'){const o=(out.match(/<thought>/g)||[]).length>(out.match(/<\/thought>/g)||[]).length?'</thought>':'';console.warn('[helios] request failed:',e.message);out+=o+(thinkOf(out)[1]?'\n\n':'')+'Model could not generate a response.'}}
 
 while(i<w.length&&!stp){const n=(1+Math.random()*3|0)*2;out+=w.slice(i,i+n).join('');i+=n;m.t=out;
 const b=lb();if(b){renderLive(b,out);if(stick)sc.scrollTop=sc.scrollHeight}await sleep(22+Math.random()*30)}
@@ -376,8 +376,8 @@ addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=='
    signal: AbortSignal (pass it to fetch so the Stop button works),
    onText(fullTextSoFar): call it every time new text arrives. Return when finished. */
 const PROV={google:{keys:['0']},unorouter:{keys:['0']},openrouter:{keys:['0']},agnes:{keys:['0']}};
-const HELIUM_POOL=[['google','gemini-3.1-flash-lite'],['unorouter','gemini-3.6-flash:free'],['google','gemini-3-flash-preview'],['unorouter','qwen3.6-27b:free'],['unorouter','minimax-m2.7:free']];
-const CARBON_POOL=[['google','gemini-4-argon'],['google','gemini-3.5-flash'],['unorouter','glm-5.2:free']];
+const HELIUM_POOL=[['unorouter','claude-sonnet-4.5'],['agnes','agnes-2.5-flash'],['google','gemini-3.1-flash-lite'],['unorouter','gemini-3.6-flash:free'],['google','gemini-3-flash-preview'],['unorouter','qwen3.6-27b:free'],['unorouter','minimax-m2.7:free']];
+const CARBON_POOL=[['agnes','agnes-3.0-flash'],['unorouter','claude-sonnet-4.5'],['google','gemini-4-argon'],['google','gemini-3.5-flash'],['unorouter','glm-5.2:free']];
 /* AGNES TEST MODE: true = every tier is routed ONLY to Agnes. Set to false to restore the original Gemini/unorouter pools. */
 const AGNES_ONLY=false;
 const AG_HELIUM=[['agnes','agnes-2.5-flash']],AG_CARBON=[['agnes','agnes-3.0-flash']];

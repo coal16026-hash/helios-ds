@@ -83,6 +83,10 @@ export default async function handler(req, res) {
         if (up.status === 429 || up.status >= 500) {
           lastError = `HTTP ${up.status}`
           await up.body?.cancel?.()
+          // Rate limited: give the limiter a moment before the next key.
+          if (up.status === 429) {
+            await new Promise((resolve) => setTimeout(resolve, 250))
+          }
           continue
         }
 
