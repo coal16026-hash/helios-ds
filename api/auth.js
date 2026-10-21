@@ -210,6 +210,9 @@ const fromB64url = (value) => Buffer.from(value, 'base64url').toString('utf8')
 const sha256 = (value) => crypto.createHash('sha256').update(value).digest()
 
 function redirectUriFor(req) {
+  // Always the canonical app origin so the registered callback URI matches,
+  // no matter which Vercel deployment URL the user started the flow from.
+  if (APP_URL) return `${APP_URL}/api/auth`
   const host = req.headers['x-forwarded-host'] || req.headers.host
   const proto = req.headers['x-forwarded-proto'] || (host?.includes('localhost') ? 'http' : 'https')
   return `${proto}://${host}/api/auth`
