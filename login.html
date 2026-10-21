@@ -75,8 +75,8 @@ footer a{color:var(--mu);text-decoration:underline;text-underline-offset:3px}foo
  <div class="f pw" id="fPw" hidden><input id="pw" type="password" name="password" placeholder=" " autocomplete="current-password"><label for="pw">Password</label>
   <button type="button" class="eye" id="eye" aria-label="Show password"></button></div>
  <div class="msg" id="msg" role="alert" aria-live="polite"></div>
- <div class="resetoauth" id="resetoauth" hidden></div>
  <button class="primary" id="go" type="submit">Continue</button>
+ <div class="resetoauth" id="resetoauth" hidden></div>
 </form>
 
 <p class="switch" id="forgotWrap" hidden><button type="button" id="fp">Forgot password?</button></p>
@@ -115,7 +115,7 @@ function bad(id,text){document.querySelectorAll('.f').forEach(f=>f.classList.rem
 function render(){
  const login=mode==='login',reset=mode==='reset';
  $('#h1').textContent=reset?(step===1?'Reset password':'Choose a new password'):(step===1?(login?'Welcome back':'Create your account'):(login?'Enter your password':'Finish creating your account'));
- $('#sub').textContent=reset?(step===1?'Enter your email and we will send you a reset link.':''):(step===1?(login?'Log in to continue to Helios.':'Start using Helios in a minute.'):'');
+ $('#sub').textContent=reset?(step===1?'Enter your email to get a reset link, or use a provider below.':''):(step===1?(login?'Log in to continue to Helios.':'Start using Helios in a minute.'):'');
  document.title=reset?'Reset password | Helios':(login?'Log in':'Sign up')+' | Helios';
  $('#chipWrap').hidden=step===1;$('#chipEmail').textContent=$('#email').value.trim();
  $('#fEmail').hidden=step===2;
