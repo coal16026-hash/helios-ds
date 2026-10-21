@@ -132,7 +132,7 @@ const server = http.createServer(async (req, res) => {
     return res.end()
   }
 
-  if (url.pathname === '/api/auth' && req.method === 'POST') {
+  if (url.pathname === '/api/auth' && (req.method === 'POST' || req.method === 'GET')) {
     return handleAuth(req, res)
   }
 

@@ -1,5 +1,10 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Helios</title>
-<script>(function(){try{if(!localStorage.getItem('helios_token'))location.replace('/')}catch(e){location.replace('/')}})();</script>
+<script>(function(){try{
+var p=new URLSearchParams(location.search),b=p.get('bootstrap');
+if(b){localStorage.setItem('helios_token',b);p.delete('bootstrap');history.replaceState(null,'',location.pathname+(location.hash||''));return}
+if(localStorage.getItem('helios_token'))return;
+document.documentElement.classList.add('gate');
+}catch(e){location.replace('/')}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin><link rel="preconnect" href="https://api.unorouter.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#fff;--side:#f9f9f9;--raise:#f4f4f4;--hov:rgba(0,0,0,.05);--act:rgba(0,0,0,.08);--bd:rgba(0,0,0,.1);--tx:#0d0d0d;--mu:#6b6b6b;--code:#f7f7f8;--codeh:#ececec;--btn:#0d0d0d;--btnt:#fff;--sh:0 8px 24px rgba(0,0,0,.12);--k:#cf222e;--s:#0a3069;--c:#6e7781;--n:#0550ae;--t:#8250df;--a:#116329}
@@ -9,6 +14,7 @@
 *{box-sizing:border-box;margin:0}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+html.gate body{visibility:hidden}
 html,body{height:100%}
 body{font:400 15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--tx);overflow:hidden;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -345,7 +351,7 @@ const applyName=()=>{const n=ls('hn')||'Hazmith Newton';$('.who b').textContent=
 applyTheme(ls('ht')||'system');applyName();
 /* Verify the session with the backend; refresh the display name and bounce to
    the login screen if the account no longer exists. */
-fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'session',token:ls('helios_token')})}).then(r=>r.json()).then(d=>{if(d&&d.ok){if(d.name){ls('hn',d.name);applyName()}}else{try{localStorage.removeItem('helios_token')}catch(e){}location.replace('/')}}).catch(()=>{try{localStorage.removeItem('helios_token')}catch(e){}location.replace('/')});
+fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'session',token:ls('helios_token')})}).then(r=>r.json()).then(d=>{if(d&&d.ok){if(d.token)ls('helios_token',d.token);if(d.name){ls('hn',d.name);applyName()}document.documentElement.classList.remove('gate')}else{try{localStorage.removeItem('helios_token')}catch(e){}location.replace('/')}}).catch(()=>{try{localStorage.removeItem('helios_token')}catch(e){}location.replace('/')});
 const sm=document.createElement('div');sm.id='sm';sm.innerHTML='<div class="dlg" id="sd"></div>';document.body.appendChild(sm);
 let sIdx=0,sRes=[];const closeDlg=()=>sm.classList.remove('on');
 function openSearch(){closePop();sm.classList.add('on');$('#sd').innerHTML='<input id="sq" placeholder="Search chats…" autocomplete="off"><div class="sr" id="srr"></div>';const q=$('#sq');q.focus();q.oninput=()=>{sIdx=0;sList()};q.onkeydown=e=>{if(e.key=='ArrowDown'||e.key=='ArrowUp'){e.preventDefault();sIdx=(sIdx+(e.key=='ArrowDown'?1:-1)+sRes.length)%sRes.length;sPaint()}if(e.key=='Enter'&&sRes[sIdx])sGo(sRes[sIdx])};sList()}
