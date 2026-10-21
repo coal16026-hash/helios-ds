@@ -1,7 +1,6 @@
 /**
  * Wire the OAuth provider credentials into Vercel and redeploy.
  *
- *   $env:GOOGLE_CLIENT_ID="...";  $env:GOOGLE_CLIENT_SECRET="..."
  *   $env:GITHUB_CLIENT_ID="...";  $env:GITHUB_CLIENT_SECRET="..."
  *   $env:DISCORD_CLIENT_ID="..."; $env:DISCORD_CLIENT_SECRET="..."
  *   node scripts/setup-oauth.mjs
@@ -12,9 +11,8 @@
 import { spawn } from 'node:child_process'
 
 const PAIRS = [
-  ['GOOGLE', 'Google Cloud Console → APIs & Services → Credentials → Web application client'],
   ['GITHUB', 'GitHub → Settings → Developer settings → OAuth Apps → New OAuth App'],
-  ['DISCORD', 'Discord Developer Portal → OAuth2 → URL Configuration'],
+  ['DISCORD', 'Discord Developer Portal → OAuth2 → General Information → Redirects'],
 ]
 
 const VERCEL = 'npx'

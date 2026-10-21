@@ -18,23 +18,6 @@ const CORS = {
 /* --------------------------------------------------------------- oauth cfg */
 
 const OAUTH = {
-  google: {
-    label: 'Google',
-    clientId: process.env.GOOGLE_CLIENT_ID || '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    authorize: 'https://accounts.google.com/o/oauth2/v2/auth',
-    token: 'https://oauth2.googleapis.com/token',
-    scope: 'openid email profile',
-    extra: { access_type: 'online', prompt: 'select_account' },
-    async profile(accessToken) {
-      const res = await fetch('https://openapis.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      const j = await res.json()
-      if (!j.email) throw new Error('Google did not return an email address.')
-      return { email: j.email, name: j.name || j.given_name || j.email.split('@')[0], id: j.sub }
-    },
-  },
   github: {
     label: 'GitHub',
     clientId: process.env.GITHUB_CLIENT_ID || '',
